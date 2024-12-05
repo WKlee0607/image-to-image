@@ -1,0 +1,15 @@
+numpy
+matplotlib
+pandas
+torch
+torchvision
+torchaudio
+lightning
+sunpy
+setproctitle
+tqdm
+albumentations
+pyyaml
+tensorboard
+diffusers
+aiapy

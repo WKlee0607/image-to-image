@@ -8,6 +8,7 @@ from tqdm import tqdm
 from setproctitle import setproctitle
 import yaml
 import torch
+import math
 from torch import optim
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
@@ -15,7 +16,7 @@ from torchmetrics import MeanAbsoluteError
 from torchmetrics.regression import PearsonCorrCoef
 from torchmetrics.image import PeakSignalNoiseRatio, StructuralSimilarityIndexMeasure
 
-from pipeline import AlignedDataset
+from pipeline import AlignedDataset, evaluation
 from networks import define_G, define_D
 from loss import Loss
 from ema import EMAHelper
@@ -90,7 +91,8 @@ if __name__ == "__main__":
         input_dir=data['train']['input_dir'], 
         target_dir=data['train']['target_dir'],
         image_size=data['image_size'],
-        ext=data['ext']
+        ext=data['ext'],
+        mode='train'
     )
     train_loader = DataLoader(
         train_dataset, 
@@ -105,7 +107,8 @@ if __name__ == "__main__":
         input_dir=data['val']['input_dir'], 
         target_dir=data['val']['target_dir'],
         image_size=data['image_size'],
-        ext=data['ext']
+        ext=data['ext'],
+        mode='val'
     )
     val_loader = DataLoader(
         val_dataset, 
@@ -272,49 +275,74 @@ if __name__ == "__main__":
 # Save images ==================================================================
         if epoch % params['save_img_per_epoch'] == 0 or epoch == params['num_epochs'] - 1:
             net_G.eval()
+            os.makedirs(output_image_train_dir/f'{epoch}', exist_ok=True)
+            os.makedirs(output_image_val_dir/f'{epoch}', exist_ok=True)
             with torch.no_grad():
-                for inputs, real_targets, _, _ in train_loader:
+                # train sample
+                for idx, data in enumerate(train_loader):
+                    inputs, real_targets, _, _ = data
                     inputs = inputs[0].unsqueeze(0).to(device)
                     real_targets = real_targets[0].unsqueeze(0)
                     fake_targets = net_G(inputs)
                     real_targets = real_targets.to(device)
                     fake_targets = fake_targets.to(device)
 
-                    train_dataset.save_image(fake_targets[0], output_image_train_dir/f"{epoch}_{iteration-1}_fake.png")
-                    train_dataset.save_image(real_targets[0], output_image_train_dir/f"{epoch}_{iteration-1}_real.png")
-                    train_fig = train_dataset.create_figure(inputs[0], real_targets[0], fake_targets[0])
-                    writer.add_figure("train/image", train_fig, iteration-1)
+                    if idx <= 10:
+                        train_dataset.save_image(fake_targets[0], output_image_train_dir/f'{epoch}'/f"{epoch}_{idx}_{iteration-1}_fake.png")
+                        train_dataset.save_image(real_targets[0], output_image_train_dir/f'{epoch}'/f"{epoch}_{idx}_{iteration-1}_real.png")
+                        train_fig = train_dataset.create_figure(inputs[0], real_targets[0], fake_targets[0])
+                        writer.add_figure("train/image", train_fig, iteration-1)
 
-                    mae_value = mae(fake_targets, real_targets)
-                    pixel_to_pixel_cc = pearson(fake_targets.flatten(), real_targets.flatten())
-                    psnr_value = psnr(fake_targets, real_targets)
-                    ssim_value = ssim(fake_targets, real_targets)
-                    writer.add_scalar("train/mae", mae_value.item(), iteration-1)
-                    writer.add_scalar("train/cc", pixel_to_pixel_cc.item(), iteration-1)
-                    writer.add_scalar("train/psnr", psnr_value.item(), iteration-1)
-                    writer.add_scalar("train/ssim", ssim_value.item(), iteration-1)
-                    break
-                for inputs, real_targets, _, _ in val_loader:
+                        mae_value = mae(fake_targets, real_targets)
+                        pixel_to_pixel_cc = pearson(fake_targets.flatten(), real_targets.flatten())
+                        psnr_value = psnr(fake_targets, real_targets)
+                        ssim_value = ssim(fake_targets, real_targets)
+                        writer.add_scalar("train/mae", mae_value.item(), iteration-1)
+                        writer.add_scalar("train/cc", pixel_to_pixel_cc.item(), iteration-1)
+                        writer.add_scalar("train/psnr", psnr_value.item(), iteration-1)
+                        writer.add_scalar("train/ssim", ssim_value.item(), iteration-1)
+                    else:
+                        break
+                
+                eval_loss = {'RMSE': 0.0, 'POD': 0.0, 'FAR': 0.0, 'CSI': 0.0}
+                val_loop = tqdm(val_loader, leave=True)
+                val_loop.set_description(f"Val {epoch}")
+                # val sample
+                for idx, data in enumerate(val_loop):
+                    inputs, real_targets, _, _ = data
                     inputs = inputs[0].unsqueeze(0).to(device)
                     real_targets = real_targets[0].unsqueeze(0)
                     fake_targets = net_G(inputs)
-                    real_targets = real_targets.to(device)
-                    fake_targets = fake_targets.to(device)
+                    real_targets = real_targets.to(device) # [1, 1, H, W]
+                    fake_targets = fake_targets.to(device) # [1, 1, H, W]
 
-                    val_dataset.save_image(fake_targets[0], output_image_val_dir/f"{epoch}_{iteration-1}_fake.png")
-                    val_dataset.save_image(real_targets[0], output_image_val_dir/f"{epoch}_{iteration-1}_real.png")
-                    val_fig = val_dataset.create_figure(inputs[0], real_targets[0], fake_targets[0])
-                    writer.add_figure("val/image", val_fig, iteration-1)
+                    if idx <= 10:
+                        val_dataset.save_image(fake_targets[0], output_image_val_dir/f'{epoch}'/f"{epoch}_{idx}_{iteration-1}_fake.png")
+                        val_dataset.save_image(real_targets[0], output_image_val_dir/f'{epoch}'/f"{epoch}_{idx}_{iteration-1}_real.png")
+                        val_fig = val_dataset.create_figure(inputs[0], real_targets[0], fake_targets[0])
+                        writer.add_figure("val/image", val_fig, iteration-1)
 
-                    mae_value = mae(fake_targets, real_targets)
-                    pixel_to_pixel_cc = pearson(fake_targets.flatten(), real_targets.flatten())
-                    psnr_value = psnr(fake_targets, real_targets)
-                    ssim_value = ssim(fake_targets, real_targets)
-                    writer.add_scalar("val/mae", mae_value.item(), iteration-1)
-                    writer.add_scalar("val/cc", pixel_to_pixel_cc.item(), iteration-1)
-                    writer.add_scalar("val/psnr", psnr_value.item(), iteration-1)
-                    writer.add_scalar("val/ssim", ssim_value.item(), iteration-1)
-                    break
+                        mae_value = mae(fake_targets, real_targets)
+                        pixel_to_pixel_cc = pearson(fake_targets.flatten(), real_targets.flatten())
+                        psnr_value = psnr(fake_targets, real_targets)
+                        ssim_value = ssim(fake_targets, real_targets)
+                        writer.add_scalar("val/mae", mae_value.item(), iteration-1)
+                        writer.add_scalar("val/cc", pixel_to_pixel_cc.item(), iteration-1)
+                        writer.add_scalar("val/psnr", psnr_value.item(), iteration-1)
+                        writer.add_scalar("val/ssim", ssim_value.item(), iteration-1)
+                    
+                    # evaluation codes 짜기
+                    losses = evaluation(real_targets, fake_targets)
+                    for key in eval_loss.keys():
+                        eval_loss[key] += losses[key].item()
+                
+                for key in eval_loss.keys():
+                    eval_loss[key] /= (idx + 1)
+                    if key == 'RMSE':
+                        eval_loss['RMSE'] = math.sqrt(eval_loss['RMSE'])
+                    print(f'{key} loss at epoch {epoch}:', eval_loss[key])
+                
+
                 
             net_G.train()
 

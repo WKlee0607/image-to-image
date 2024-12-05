@@ -2,29 +2,29 @@ name: "171_304 to 193 (Pix2PixHD)"
 
 data:
   ext: npy
-  image_size: 1024
+  image_size: 256
   train:
-    input_dir: /home/mgj/workspace/mgjeon/image-to-image/data/sdo/aia_dataset/train/input
-    target_dir: /home/mgj/workspace/mgjeon/image-to-image/data/sdo/aia_dataset/train/target
-    batch_size: 1
+    input_dir: /data/datasets/BBDM/train/A
+    target_dir: /data/datasets/BBDM/train/B
+    batch_size: 4
     shuffle: true
     num_workers: 4
     pin_memory: true
     drop_last: true
   val:
-    input_dir: /home/mgj/workspace/mgjeon/image-to-image/data/sdo/aia_dataset/val/input
-    target_dir: /home/mgj/workspace/mgjeon/image-to-image/data/sdo/aia_dataset/val/target
+    input_dir: /data/datasets/BBDM/val/A
+    target_dir: /data/datasets/BBDM/val/B
     batch_size: 1
     shuffle: false
-    num_workers: 0
+    num_workers: 1
     pin_memory: false
     drop_last: false
   test:
-    input_dir: /home/mgj/workspace/mgjeon/image-to-image/data/sdo/aia_dataset/test/input
-    target_dir: /home/mgj/workspace/mgjeon/image-to-image/data/sdo/aia_dataset/test/target
+    input_dir: /data/datasets/BBDM/test/A
+    target_dir: /data/datasets/BBDM/test/B
     batch_size: 1
     shuffle: false
-    num_workers: 0
+    num_workers: 1
     pin_memory: false
     drop_last: false
 
@@ -32,7 +32,7 @@ model:
   generator:
     name: default_generator
     args:
-      input_ch: 2
+      input_ch: 3
       target_ch: 1
       n_gf: 64
       n_downsample: 4
@@ -43,7 +43,7 @@ model:
   discriminator:
     name: default_discriminator
     args:
-      input_ch: 2
+      input_ch: 3
       target_ch: 1
       n_df: 64
       ch_balance: 1
@@ -56,7 +56,7 @@ params:
   optimizer:
     name: Adam
     args:
-      lr: 0.00001
+      lr: 0.0001 # 0.00001 
       betas: [0.5, 0.999]
   grad_clip:
     clip: True
@@ -78,7 +78,7 @@ params:
   num_epochs: 50
   log_per_iteration: 50
   save_img_per_epoch: 1
-  save_state_per_epoch: 1
+  save_state_per_epoch: 10
   save_top_k: -1
   seed: 42
   float32_matmul_precision: "high"
@@ -86,5 +86,5 @@ params:
   devices: [0]
   precision: "32-true"
   strategy: "ddp"
-  output_dir: /home/mgj/workspace/mgjeon/image-to-image/results/sdo/pix2pixCC/default
+  output_dir: ./results/sdo/pix2pixCC/default
   resume_from: null

@@ -90,7 +90,8 @@ if __name__ == "__main__":
         input_dir=data['train']['input_dir'], 
         target_dir=data['train']['target_dir'],
         image_size=data['image_size'],
-        ext=data['ext']
+        ext=data['ext'],
+        mode='train'
     )
     train_loader = DataLoader(
         train_dataset, 
@@ -105,7 +106,8 @@ if __name__ == "__main__":
         input_dir=data['val']['input_dir'], 
         target_dir=data['val']['target_dir'],
         image_size=data['image_size'],
-        ext=data['ext']
+        ext=data['ext'],
+        mode='val'
     )
     val_loader = DataLoader(
         val_dataset, 
@@ -272,16 +274,20 @@ if __name__ == "__main__":
 # Save images ==================================================================
         if epoch % params['save_img_per_epoch'] == 0 or epoch == params['num_epochs'] - 1:
             net_G.eval()
+            os.makedirs(output_image_train_dir/f'{epoch}', exist_ok=True)
+            os.makedirs(output_image_val_dir/f'{epoch}', exist_ok=True)
             with torch.no_grad():
-                for inputs, real_targets, _, _ in train_loader:
+                cnt = 0
+                for idx, data in enumerate(train_loader):
+                    inputs, real_targets, _, _ = data
                     inputs = inputs[0].unsqueeze(0).to(device)
                     real_targets = real_targets[0].unsqueeze(0)
                     fake_targets = net_G(inputs)
                     real_targets = real_targets.to(device)
                     fake_targets = fake_targets.to(device)
 
-                    train_dataset.save_image(fake_targets[0], output_image_train_dir/f"{epoch}_{iteration-1}_fake.png")
-                    train_dataset.save_image(real_targets[0], output_image_train_dir/f"{epoch}_{iteration-1}_real.png")
+                    train_dataset.save_image(fake_targets[0], output_image_train_dir/f'{epoch}'/f"{epoch}_{idx}_{iteration-1}_fake.png")
+                    train_dataset.save_image(real_targets[0], output_image_train_dir/f'{epoch}'/f"{epoch}_{idx}_{iteration-1}_real.png")
                     train_fig = train_dataset.create_figure(inputs[0], real_targets[0], fake_targets[0])
                     writer.add_figure("train/image", train_fig, iteration-1)
 
@@ -298,16 +304,18 @@ if __name__ == "__main__":
                     pearson.reset()
                     psnr.reset()
                     ssim.reset()
-                    break
-                for inputs, real_targets, _, _ in val_loader:
+                    if idx == 10:
+                        break
+                for idx, data in enumerate(val_loader):
+                    inputs, real_targets, _, _ = data
                     inputs = inputs[0].unsqueeze(0).to(device)
                     real_targets = real_targets[0].unsqueeze(0)
                     fake_targets = net_G(inputs)
                     real_targets = real_targets.to(device)
                     fake_targets = fake_targets.to(device)
 
-                    val_dataset.save_image(fake_targets[0], output_image_val_dir/f"{epoch}_{iteration-1}_fake.png")
-                    val_dataset.save_image(real_targets[0], output_image_val_dir/f"{epoch}_{iteration-1}_real.png")
+                    val_dataset.save_image(fake_targets[0], output_image_val_dir/f'{epoch}'/f"{epoch}_{idx}_{iteration-1}_fake.png")
+                    val_dataset.save_image(real_targets[0], output_image_val_dir/f'{epoch}'/f"{epoch}_{idx}_{iteration-1}_real.png")
                     val_fig = val_dataset.create_figure(inputs[0], real_targets[0], fake_targets[0])
                     writer.add_figure("val/image", val_fig, iteration-1)
 
@@ -324,7 +332,8 @@ if __name__ == "__main__":
                     pearson.reset()
                     psnr.reset()
                     ssim.reset()
-                    break
+                    if idx == 10:
+                        break
                 
             net_G.train()
 

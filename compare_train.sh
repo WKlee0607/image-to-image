@@ -20,11 +20,13 @@
 
 # python diffusion/train.py --config diffusion/configs/sdo/ddpm_diffusers_x0.yaml
 
+############# 여기서 시작 
 
-python img2img/diffusion/train.py --config img2img/diffusion/configs/sdo/ddpm_uvit_noise.yaml
+#python img2img/diffusion/train.py --config img2img/diffusion/configs/sdo/ddpm_uvit_noise.yaml
 
-python img2img/diffusion/train.py --config img2img/diffusion/configs/sdo/ddpm_uvit_x0.yaml
+#python img2img/diffusion/train.py --config img2img/diffusion/configs/sdo/ddpm_uvit_x0.yaml
 
-python img2img/diffusion/train.py --config img2img/diffusion/configs/sdo/fast_ddpm_uvit_noise.yaml
+#python img2img/diffusion/train.py --config img2img/diffusion/configs/sdo/fast_ddpm_uvit_noise.yaml
 
-python img2img/diffusion/train.py --config img2img/diffusion/configs/sdo/fast_ddpm_uvit_x0.yaml
+#python img2img/diffusion/train.py --config img2img/diffusion/configs/sdo/fast_ddpm_uvit_x0.yaml
+

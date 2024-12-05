@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 from torch.utils.data import Dataset
 import albumentations as A
 from albumentations.pytorch import ToTensorV2
+from torchvision.transforms import functional as F
 
 
 # AlignedDataset ========================================================================================
@@ -17,7 +18,9 @@ class AlignedDataset(Dataset):
             target_dir,
             image_size=256,
             ext="jpg",
+            mode='train'
     ):
+        self.mode = mode
         self.input_dir = Path(input_dir)
         self.target_dir = Path(target_dir)
 
@@ -55,8 +58,8 @@ class AlignedDataset(Dataset):
             # [C, H, W]
             # np.float32
             # [C, H, W] -> [H, W, C] for albumentations
-            input_image = np.load(input_file).astype(np.float32).transpose(1, 2, 0) 
-            target_image = np.load(target_file).astype(np.float32).transpose(1, 2, 0) 
+            input_image = np.load(input_file).astype(np.float32) # [H, W, 3]
+            target_image = np.expand_dims(np.load(target_file), axis=-1).astype(np.float32) # [H, W, 1]
 
             transformed = self.transform(image=input_image, image_target=target_image)
             # [C, H, W] torch.float32
@@ -70,7 +73,7 @@ class AlignedDataset(Dataset):
             # [C, H, W] -> [H, W, C] for albumentations
             input_image = np.load(input_file)['data'].astype(np.float32).transpose(1, 2, 0)
             target_image = np.load(target_file)['data'].astype(np.float32).transpose(1, 2, 0) 
-
+            
             transformed = self.transform(image=input_image, image_target=target_image)
             # [C, H, W] torch.float32
             input_image = transformed["image"]
@@ -106,15 +109,29 @@ class AlignedDataset(Dataset):
             self.m = m
             self.s = s
         elif self.ext in ["npy", "npz"]:
-            self.transform = A.Compose([
-                A.Resize(self.image_size, self.image_size),
-                # A.VerticalFlip(p=0.5),
-                ToTensorV2(),
-            ], 
-                additional_targets = {
-                    'image_target': 'image',
-                }
-            )
+            if self.mode == 'train' or self.mode=='val':
+                self.transform = A.Compose([
+                    #A.Resize(self.image_size, self.image_size),
+                    # A.VerticalFlip(p=0.5),
+                    A.RandomCrop(height=self.image_size, width=self.image_size),
+                    ToTensorV2(), # [C,H,W]
+                ], 
+                    additional_targets = {
+                        'image_target': 'image',
+                    },
+                    is_check_shapes=False
+                )
+            else:
+                self.transform = A.Compose([
+                    A.Crop(x_min=192, y_min=240, x_max=467, y_max=540), # (top=240, left=192, height=300, width=275), # x_min=500, y_min=300, x_max=1000, y_max=800, p=1
+                    A.RandomCrop(height=self.image_size, width=self.image_size),
+                    ToTensorV2(),
+                ], 
+                    additional_targets = {
+                        'image_target': 'image',
+                    },
+                    is_check_shapes=False
+                )
         else:
             raise NotImplementedError("File extension not supported")
 

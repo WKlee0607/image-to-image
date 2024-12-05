@@ -32,7 +32,7 @@ model:
   name: UNet2DModel
   args:
     sample_size: 1024
-    in_channels: 3     # channel of input+noise image
+    in_channels: 3     # channel of input+noise image => 4로 지정
     out_channels: 1    # channel of target image = channel of noise
     layers_per_block: 2
     block_out_channels: [32, 32, 64, 64, 128, 128, 256, 256]

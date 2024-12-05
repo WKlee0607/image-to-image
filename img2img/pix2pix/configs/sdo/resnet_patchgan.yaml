@@ -4,24 +4,24 @@ data:
   ext: npy
   image_size: 256
   train:
-    input_dir: /home/mgj/workspace/mgjeon/image-to-image/data/sdo/aia_dataset/train/input
-    target_dir: /home/mgj/workspace/mgjeon/image-to-image/data/sdo/aia_dataset/train/target
+    input_dir: /data/datasets/BBDM/train/A
+    target_dir: /data/datasets/BBDM/train/B
     batch_size: 4
     shuffle: true
     num_workers: 4
     pin_memory: true
-    drop_last: true
+    drop_last: false
   val:
-    input_dir: /home/mgj/workspace/mgjeon/image-to-image/data/sdo/aia_dataset/val/input
-    target_dir: /home/mgj/workspace/mgjeon/image-to-image/data/sdo/aia_dataset/val/target
+    input_dir: /data/datasets/BBDM/val/A
+    target_dir: /data/datasets/BBDM/val/B
     batch_size: 1
     shuffle: false
     num_workers: 0
     pin_memory: true
     drop_last: false
   test:
-    input_dir: /home/mgj/workspace/mgjeon/image-to-image/data/sdo/aia_dataset/test/input
-    target_dir: /home/mgj/workspace/mgjeon/image-to-image/data/sdo/aia_dataset/test/target
+    input_dir: /data/datasets/BBDM/test/A
+    target_dir: /data/datasets/BBDM/test/B
     batch_size: 1
     shuffle: false
     num_workers: 0
@@ -32,7 +32,7 @@ model:
   generator:
     name: resnet
     args:
-      input_nc: 2
+      input_nc: 3
       output_nc: 1
       ngf: 64
       norm_layer: instance
@@ -44,7 +44,7 @@ model:
   discriminator:
     name: patchgan
     args:
-      input_nc: 3
+      input_nc: 4 # input_nc + output_nc
       ndf: 64
       n_layers: 3
       norm_layer: instance

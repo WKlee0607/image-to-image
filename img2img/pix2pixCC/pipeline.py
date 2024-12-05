@@ -3,10 +3,47 @@ from pathlib import Path
 
 import numpy as np
 import matplotlib.pyplot as plt
+import torch
 
 from torch.utils.data import Dataset
 import albumentations as A
 from albumentations.pytorch import ToTensorV2
+
+def dBZ_to_mmhr(x):
+    dBZ = x*35 + 25
+    Z = 10.0 ** (dBZ / 10.0)
+    R = (Z / 200) ** (1 / 1.6) # mm/hr 단위
+    return R
+
+def evaluation(real_target, fake_target):
+    '''
+    evaluation codes for RMSE, POD, FAR, CSI
+    - real_targke: torch.tensor -> [B,1,H,W]
+    - fake_target: torch.tensor -> [B,1,H,W]
+    '''
+    B,c,h,w = real_target.shape
+    
+    # RMSE
+    RMSE = torch.sum((real_target - fake_target)**2) # [1]
+
+    # POD, FAR, CSI
+    real_target = dBZ_to_mmhr(real_target) 
+    fake_target = dBZ_to_mmhr(fake_target) 
+    
+    thres = 0.1
+    pos_real, neg_real = (real_target > thres).int(), (real_target <= thres).int() # [B, 1, H, W]
+    pos_fake, neg_fake = (fake_target > thres).int(), (fake_target <= thres).int()
+    
+    TP = torch.sum(pos_fake * pos_real).float() # [1]
+    FP = torch.sum(pos_fake * neg_real).float()
+    FN = torch.sum(neg_fake * neg_real).float()
+
+    POD = TP / (TP + FN) if (TP + FN) > 0 else 0.0 # [1]
+    FAR = FP / (TP + FP) if (TP + FP) > 0 else 0.0
+    CSI = TP / (TP + FP + FN) if (TP + FP + FN) > 0 else 0.0
+
+    return {'RMSE': RMSE, 'POD': POD, 'FAR': FAR, 'CSI': CSI}
+
 
 
 # AlignedDataset ========================================================================================
@@ -17,7 +54,9 @@ class AlignedDataset(Dataset):
             target_dir,
             image_size=256,
             ext="jpg",
+            mode='train'
     ):
+        self.mode = mode
         self.input_dir = Path(input_dir)
         self.target_dir = Path(target_dir)
 
@@ -55,8 +94,8 @@ class AlignedDataset(Dataset):
             # [C, H, W]
             # np.float32
             # [C, H, W] -> [H, W, C] for albumentations
-            input_image = np.load(input_file).astype(np.float32).transpose(1, 2, 0) 
-            target_image = np.load(target_file).astype(np.float32).transpose(1, 2, 0) 
+            input_image = np.load(input_file).astype(np.float32) # [H, W, 3]
+            target_image = np.expand_dims(np.load(target_file), axis=-1).astype(np.float32) # [H, W, 1]
 
             transformed = self.transform(image=input_image, image_target=target_image)
             # [C, H, W] torch.float32
@@ -106,15 +145,29 @@ class AlignedDataset(Dataset):
             self.m = m
             self.s = s
         elif self.ext in ["npy", "npz"]:
-            self.transform = A.Compose([
-                A.Resize(self.image_size, self.image_size),
-                # A.VerticalFlip(p=0.5),
-                ToTensorV2(),
-            ], 
-                additional_targets = {
-                    'image_target': 'image',
-                }
-            )
+            if self.mode == 'train' or self.mode=='val':
+                self.transform = A.Compose([
+                    #A.Resize(self.image_size, self.image_size),
+                    # A.VerticalFlip(p=0.5),
+                    A.RandomCrop(height=self.image_size, width=self.image_size),
+                    ToTensorV2(), # [C,H,W]
+                ], 
+                    additional_targets = {
+                        'image_target': 'image',
+                    },
+                    is_check_shapes=False
+                )
+            else:
+                self.transform = A.Compose([
+                    A.Crop(x_min=192, y_min=240, x_max=467, y_max=540), # (top=240, left=192, height=300, width=275), # x_min=500, y_min=300, x_max=1000, y_max=800, p=1
+                    A.RandomCrop(height=self.image_size, width=self.image_size),
+                    ToTensorV2(),
+                ], 
+                    additional_targets = {
+                        'image_target': 'image',
+                    },
+                    is_check_shapes=False
+                )
         else:
             raise NotImplementedError("File extension not supported")
 
