@@ -1,4 +1,4 @@
-name: "171_304 to 193 (Pix2PixHD)"
+name: "171_304 to 193 (Pix2PixCC)"
 
 data:
   ext: npy
@@ -30,7 +30,7 @@ data:
 
 model:
   generator:
-    name: R2AttU_Net # default_generator # AttU_Net
+    name: default_generator # R2AttU_Net # default_generator # AttU_Net
     args:
       input_ch: 3
       target_ch: 1
@@ -57,7 +57,7 @@ params:
   optimizer:
     name: Adam
     args:
-      lr: 0.00001 # 0.00001 
+      lr: 0.0001 # 0.00001 
       betas: [0.5, 0.999]
   grad_clip:
     clip: True

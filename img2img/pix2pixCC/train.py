@@ -334,7 +334,7 @@ if __name__ == "__main__":
                     # evaluation codes 짜기
                     losses = evaluation(real_targets, fake_targets)
                     for key in eval_loss.keys():
-                        eval_loss[key] += losses[key].item()
+                        eval_loss[key] += losses[key]
                 
                 for key in eval_loss.keys():
                     eval_loss[key] /= (idx + 1)

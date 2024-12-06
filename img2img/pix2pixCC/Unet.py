@@ -235,7 +235,6 @@ class R2U_Net(nn.Module):
 
         self.Conv_1x1 = nn.Conv2d(64,output_ch,kernel_size=1,stride=1,padding=0)
 
-
     def forward(self,x):
         # encoding path
         x1 = self.RRCNN1(x)
@@ -383,6 +382,23 @@ class R2AttU_Net(nn.Module):
         self.Up_RRCNN2 = RRCNN_block(ch_in=128, ch_out=64,t=t)
 
         self.Conv_1x1 = nn.Conv2d(64,output_ch,kernel_size=1,stride=1,padding=0)
+
+    def encoding(self, x):
+        # encoding path
+        x1 = self.RRCNN1(x)
+
+        x2 = self.Maxpool(x1)
+        x2 = self.RRCNN2(x2)
+        
+        x3 = self.Maxpool(x2)
+        x3 = self.RRCNN3(x3)
+
+        x4 = self.Maxpool(x3)
+        x4 = self.RRCNN4(x4)
+
+        x5 = self.Maxpool(x4)
+        x5 = self.RRCNN5(x5)
+        return x5
 
 
     def forward(self,x):

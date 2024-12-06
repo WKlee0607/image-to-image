@@ -4,12 +4,14 @@ Adapted from:
 """
 
 import torch
+import torch.nn.functional as F
 from torch import nn
 
 
 class Loss:
     def __init__(self, cfg):
         self.cfg = cfg 
+        self.model_name = cfg['model']['generator']['name']
         loss_cfg = cfg['params']['loss']
 
         if loss_cfg['LSGANcriterion']['name'] == 'MSELoss':
@@ -123,6 +125,13 @@ class Loss:
             loss_G += loss_CC * (1.0 / self.n_CC) * self.lambda_CC
 
         #----------------------------------------------------------------------
+        # [5] Compute Feature-Level similarity loss
+        if self.model_name == 'R2AttU_Net':
+            in_emb = F.normalize(G.encoding(inputs), dim=-1, eps=1e-6)
+            tar_emb = F.normalize(G.encoding(inputs), dim=-1, eps=1e-6)
+            sim = F.cosine_similarity(in_emb, tar_emb, dim=-1, eps=1e-6)
+            loss_G += (1.0-torch.mean(sim))
+
         return loss_G, loss_D
     
 # Inspector ====================================================================
