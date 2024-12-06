@@ -1,4 +1,5 @@
 from networks_default import Generator, Discriminator, weights_init
+from Unet import R2AttU_Net, AttU_Net
 
 
 # =============================================================================
@@ -18,6 +19,17 @@ def define_G(model_cfg):
             trans_conv=args['trans_conv']
         )
         net_G.apply(weights_init)
+    elif name_G == 'R2AttU_Net':
+        net_G = R2AttU_Net(
+            img_ch=args['input_ch'],
+            output_ch=args['target_ch'],
+            t=args['t']
+        )
+    elif name_G == 'AttU_Net':
+        net_G = AttU_Net(
+            img_ch=args['input_ch'],
+            output_ch=args['target_ch']
+        )
     else:
         raise NotImplementedError(f"Generator model name '{name_G}' is not implemented")
     

@@ -30,7 +30,7 @@ data:
 
 model:
   generator:
-    name: default_generator
+    name: R2AttU_Net # default_generator # AttU_Net
     args:
       input_ch: 3
       target_ch: 1
@@ -40,6 +40,7 @@ model:
       norm_type: InstanceNorm2d
       padding_type: 'reflection'
       trans_conv: True
+      t: 2 # only used in R2AttU_Net
   discriminator:
     name: default_discriminator
     args:
@@ -56,7 +57,7 @@ params:
   optimizer:
     name: Adam
     args:
-      lr: 0.0001 # 0.00001 
+      lr: 0.00001 # 0.00001 
       betas: [0.5, 0.999]
   grad_clip:
     clip: True
