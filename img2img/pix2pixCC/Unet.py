@@ -357,43 +357,46 @@ class AttU_Net(nn.Module):
 class R2AttU_Net(nn.Module):
     def __init__(self,img_ch=3,output_ch=1,t=2):
         super(R2AttU_Net,self).__init__()
+        self.c1 = 32 # 64
+        self.c2 = 64 # 128
+        self.c3 = 128 # 256
+        self.c4 = 256 # 512
+        self.c5 = 512 # 1024
         
         self.Maxpool = nn.MaxPool2d(kernel_size=2,stride=2)
         self.Upsample = nn.Upsample(scale_factor=2)
 
-        self.RRCNN1 = RRCNN_block(ch_in=img_ch,ch_out=64,t=t)
+        self.RRCNN1 = RRCNN_block(ch_in=img_ch,ch_out=self.c1,t=t)
 
-        self.RRCNN2 = RRCNN_block(ch_in=64,ch_out=128,t=t)
+        self.RRCNN2 = RRCNN_block(ch_in=self.c1,ch_out=self.c2,t=t)
         
-        self.RRCNN3 = RRCNN_block(ch_in=128,ch_out=256,t=t)
+        self.RRCNN3 = RRCNN_block(ch_in=self.c2,ch_out=self.c3,t=t)
         
-        self.RRCNN4 = RRCNN_block(ch_in=256,ch_out=512,t=t)
+        self.RRCNN4 = RRCNN_block(ch_in=self.c3,ch_out=self.c4,t=t)
         
-        self.RRCNN5 = RRCNN_block(ch_in=512,ch_out=1024,t=t)
+        self.RRCNN5 = RRCNN_block(ch_in=self.c4,ch_out=self.c5,t=t)
         
 
-        self.Up5 = up_conv(ch_in=1024,ch_out=512)
-        self.Att5 = Attention_block(F_g=512,F_l=512,F_int=256)
-        self.Up_RRCNN5 = RRCNN_block(ch_in=1024, ch_out=512,t=t)
+        self.Up5 = up_conv(ch_in=self.c5,ch_out=self.c4)
+        self.Att5 = Attention_block(F_g=self.c4,F_l=self.c4,F_int=self.c3)
+        self.Up_RRCNN5 = RRCNN_block(ch_in=self.c5, ch_out=self.c4,t=t)
         
-        self.Up4 = up_conv(ch_in=512,ch_out=256)
-        self.Att4 = Attention_block(F_g=256,F_l=256,F_int=128)
-        self.Up_RRCNN4 = RRCNN_block(ch_in=512, ch_out=256,t=t)
+        self.Up4 = up_conv(ch_in=self.c4,ch_out=self.c3)
+        self.Att4 = Attention_block(F_g=self.c3,F_l=self.c3,F_int=self.c2)
+        self.Up_RRCNN4 = RRCNN_block(ch_in=self.c4, ch_out=self.c3,t=t)
         
-        self.Up3 = up_conv(ch_in=256,ch_out=128)
-        self.Att3 = Attention_block(F_g=128,F_l=128,F_int=64)
-        self.Up_RRCNN3 = RRCNN_block(ch_in=256, ch_out=128,t=t)
+        self.Up3 = up_conv(ch_in=self.c3,ch_out=self.c2)
+        self.Att3 = Attention_block(F_g=self.c2,F_l=self.c2,F_int=self.c1)
+        self.Up_RRCNN3 = RRCNN_block(ch_in=self.c3, ch_out=self.c2,t=t)
         
-        self.Up2 = up_conv(ch_in=128,ch_out=64)
-        self.Att2 = Attention_block(F_g=64,F_l=64,F_int=32)
-        self.Up_RRCNN2 = RRCNN_block(ch_in=128, ch_out=64,t=t)
+        self.Up2 = up_conv(ch_in=self.c2,ch_out=self.c1)
+        self.Att2 = Attention_block(F_g=self.c1,F_l=self.c1,F_int=int(self.c1/2))
+        self.Up_RRCNN2 = RRCNN_block(ch_in=self.c2, ch_out=self.c1,t=t)
 
-        self.Conv_1x1 = nn.Conv2d(64,output_ch,kernel_size=1,stride=1,padding=0)
+        self.Conv_1x1 = nn.Conv2d(self.c1, output_ch, kernel_size=1,stride=1,padding=0)
         self.act = nn.Tanh()
 
-        # expand for target
-        #self.conv1_expand = nn.Conv2d(1, 3, kernel_size=3, stride=1, padding=1)
-    """
+    '''
     def encoding(self, x):
         # encoding path
         #if x.shape[1] == 1:
@@ -412,7 +415,7 @@ class R2AttU_Net(nn.Module):
         x5 = self.Maxpool(x4)
         x5 = self.RRCNN5(x5)
         return x5
-    """
+    '''
     def forward(self,x):
         # encoding path
         x1 = self.RRCNN1(x)

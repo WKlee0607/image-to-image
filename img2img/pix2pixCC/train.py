@@ -142,8 +142,8 @@ if __name__ == "__main__":
 # Optimizer ====================================================================
     if params['optimizer']['name'] == "Adam":
         args = params['optimizer']['args']
-        optim_G = optim.Adam(net_G.parameters(), lr=args['lr'], betas=args['betas'])
-        optim_D = optim.Adam(net_D.parameters(), lr=args['lr'], betas=args['betas'])
+        optim_G = optim.Adam(net_G.parameters(), lr=args['lr']*args['weigt_G'], betas=args['betas'], weight_decay=args['weight_decay'])
+        optim_D = optim.Adam(net_D.parameters(), lr=args['lr']*args['weigt_D'], betas=args['betas'], weight_decay=args['weight_decay'])
     else:
         raise NotImplementedError("Optimizer not implemented")
 

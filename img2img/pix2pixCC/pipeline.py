@@ -21,21 +21,21 @@ def evaluation(real_target, fake_target):
     - real_targke: torch.tensor -> [B,1,H,W]
     - fake_target: torch.tensor -> [B,1,H,W]
     '''
-    B,c,h,w = real_target.shape
-    real_target = dBZ_to_mmhr(real_target) 
-    fake_target = dBZ_to_mmhr(fake_target) 
+    B,c,h,w = real_target.shape 
     
     # RMSE
-    RMSE = torch.sum((real_target - fake_target)**2) # [1]
+    RMSE = torch.sum((real_target - fake_target)**2)# [1]
+    real_target = dBZ_to_mmhr(real_target) 
+    fake_target = dBZ_to_mmhr(fake_target)
 
     # POD, FAR, CSI
     thres = 0.1
     pos_real, neg_real = (real_target > thres).int(), (real_target <= thres).int() # [B, 1, H, W]
     pos_fake, neg_fake = (fake_target > thres).int(), (fake_target <= thres).int()
     
-    TP = torch.sum(pos_fake * pos_real).float() # [1]
-    FP = torch.sum(pos_fake * neg_real).float()
-    FN = torch.sum(neg_fake * neg_real).float()
+    TP = torch.sum(pos_fake * pos_real).float() / torch.sum(pos_real).float() # [1]
+    FP = torch.sum(pos_fake * neg_real).float() / torch.sum(neg_real).float()
+    FN = torch.sum(neg_fake * neg_real).float() / torch.sum(neg_real).float()
 
     POD = TP / (TP + FN) if (TP + FN) > 0 else 0.0 # [1]
     FAR = FP / (TP + FP) if (TP + FP) > 0 else 0.0

@@ -13,7 +13,7 @@ from functools import partial
 # Set the initial conditions of weights
 def weights_init(module):
     if isinstance(module, nn.Conv2d):
-        nn.init.kaiming_normal_(module.weight, mode='fan_out', nonlinearity='relu')
+        nn.init.kaiming_normal_(module.weight)
         nn.init.constant_(module.bias, 0.02)
         # module.weight.detach().normal_(0.0, 0.02)
 

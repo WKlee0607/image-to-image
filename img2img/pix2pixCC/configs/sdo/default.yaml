@@ -6,7 +6,7 @@ data:
   train:
     input_dir: /data/datasets/BBDM/train/A
     target_dir: /data/datasets/BBDM/train/B
-    batch_size: 4
+    batch_size: 8
     shuffle: true
     num_workers: 4
     pin_memory: true
@@ -30,7 +30,7 @@ data:
 
 model:
   generator:
-    name: R2AttU_Net # default_generator # AttU_Net
+    name: R2AttU_Net #R2AttU_Net # default_generator # AttU_Net
     args:
       input_ch: 3
       target_ch: 1
@@ -59,6 +59,10 @@ params:
     args:
       lr: 0.0001 # 0.00001 
       betas: [0.5, 0.999]
+      weight_decay: 0.0001
+      weigt_G: 1
+      weigt_D: 0.5 
+
   grad_clip:
     clip: True
     max_norm: 1.0
