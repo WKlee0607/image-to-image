@@ -126,12 +126,13 @@ class Loss:
 
         #----------------------------------------------------------------------
         # [5] Compute Feature-Level similarity loss
+        """
         if self.model_name == 'R2AttU_Net':
             in_emb = F.normalize(G.encoding(inputs), dim=-1, eps=1e-6)
-            tar_emb = F.normalize(G.encoding(inputs), dim=-1, eps=1e-6)
-            sim = F.cosine_similarity(in_emb, tar_emb, dim=-1, eps=1e-6)
+            tar_emb = F.normalize(G.encoding(real_targets.repeat(1,3,1,1)), dim=-1, eps=1e-6)
+            sim = F.cosine_similarity(in_emb, tar_emb.clone().detach(), dim=-1, eps=1e-6)
             loss_G += (1.0-torch.mean(sim))
-
+        """
         return loss_G, loss_D
     
 # Inspector ====================================================================

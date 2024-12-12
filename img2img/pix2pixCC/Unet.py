@@ -5,6 +5,13 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn import init
 
+class Mish(nn.Module):
+    def __init__(self):
+        super(Mish, self).__init__()
+    
+    def forward(self, x):
+        return x * torch.tanh(F.softplus(x))
+
 def init_weights(net, init_type='normal', gain=0.02):
     def init_func(m):
         classname = m.__class__.__name__
@@ -34,10 +41,10 @@ class conv_block(nn.Module):
         self.conv = nn.Sequential(
             nn.Conv2d(ch_in, ch_out, kernel_size=3,stride=1,padding=1,bias=True),
             nn.BatchNorm2d(ch_out),
-            nn.ReLU(inplace=True),
+            Mish(),
             nn.Conv2d(ch_out, ch_out, kernel_size=3,stride=1,padding=1,bias=True),
             nn.BatchNorm2d(ch_out),
-            nn.ReLU(inplace=True)
+            Mish()
         )
 
 
@@ -52,7 +59,7 @@ class up_conv(nn.Module):
             nn.Upsample(scale_factor=2),
             nn.Conv2d(ch_in,ch_out,kernel_size=3,stride=1,padding=1,bias=True),
 		    nn.BatchNorm2d(ch_out),
-			nn.ReLU(inplace=True)
+			Mish()
         )
 
     def forward(self,x):
@@ -67,7 +74,7 @@ class Recurrent_block(nn.Module):
         self.conv = nn.Sequential(
             nn.Conv2d(ch_out,ch_out,kernel_size=3,stride=1,padding=1,bias=True),
 		    nn.BatchNorm2d(ch_out),
-			nn.ReLU(inplace=True)
+			Mish()
         )
 
     def forward(self,x):
@@ -126,7 +133,7 @@ class Attention_block(nn.Module):
             nn.Sigmoid()
         )
         
-        self.relu = nn.ReLU(inplace=True)
+        self.relu = Mish()
         
     def forward(self,g,x):
         g1 = self.W_g(g)
@@ -303,7 +310,7 @@ class AttU_Net(nn.Module):
         self.Up_conv2 = conv_block(ch_in=128, ch_out=64)
 
         self.Conv_1x1 = nn.Conv2d(64,output_ch,kernel_size=1,stride=1,padding=0)
-
+        self.act = Mish()
 
     def forward(self,x):
         # encoding path
@@ -382,9 +389,15 @@ class R2AttU_Net(nn.Module):
         self.Up_RRCNN2 = RRCNN_block(ch_in=128, ch_out=64,t=t)
 
         self.Conv_1x1 = nn.Conv2d(64,output_ch,kernel_size=1,stride=1,padding=0)
+        self.act = nn.Tanh()
 
+        # expand for target
+        #self.conv1_expand = nn.Conv2d(1, 3, kernel_size=3, stride=1, padding=1)
+    """
     def encoding(self, x):
         # encoding path
+        #if x.shape[1] == 1:
+        #    x = self.conv1_expand(x)
         x1 = self.RRCNN1(x)
 
         x2 = self.Maxpool(x1)
@@ -399,8 +412,7 @@ class R2AttU_Net(nn.Module):
         x5 = self.Maxpool(x4)
         x5 = self.RRCNN5(x5)
         return x5
-
-
+    """
     def forward(self,x):
         # encoding path
         x1 = self.RRCNN1(x)
@@ -438,6 +450,6 @@ class R2AttU_Net(nn.Module):
         d2 = torch.cat((x1,d2),dim=1)
         d2 = self.Up_RRCNN2(d2)
 
-        d1 = self.Conv_1x1(d2)
-
-        return d1
+        d1 = self.Conv_1x1(d2) # [B, 3, 256, 256]
+        heatmap = self.act(d1)
+        return heatmap

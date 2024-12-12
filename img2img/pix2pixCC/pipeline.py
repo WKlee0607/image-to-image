@@ -22,14 +22,13 @@ def evaluation(real_target, fake_target):
     - fake_target: torch.tensor -> [B,1,H,W]
     '''
     B,c,h,w = real_target.shape
+    real_target = dBZ_to_mmhr(real_target) 
+    fake_target = dBZ_to_mmhr(fake_target) 
     
     # RMSE
     RMSE = torch.sum((real_target - fake_target)**2) # [1]
 
     # POD, FAR, CSI
-    real_target = dBZ_to_mmhr(real_target) 
-    fake_target = dBZ_to_mmhr(fake_target) 
-    
     thres = 0.1
     pos_real, neg_real = (real_target > thres).int(), (real_target <= thres).int() # [B, 1, H, W]
     pos_fake, neg_fake = (fake_target > thres).int(), (fake_target <= thres).int()

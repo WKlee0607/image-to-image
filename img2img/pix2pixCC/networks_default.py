@@ -14,12 +14,12 @@ from functools import partial
 def weights_init(module):
     if isinstance(module, nn.Conv2d):
         nn.init.kaiming_normal_(module.weight, mode='fan_out', nonlinearity='relu')
-        nn.init.constant_(module.bias, 0)
+        nn.init.constant_(module.bias, 0.02)
         # module.weight.detach().normal_(0.0, 0.02)
 
     elif isinstance(module, nn.BatchNorm2d):
-        nn.init.constant_(module.weight, 1)
-        nn.init.constant_(module.bias, 0)
+        nn.init.constant_(module.weight, 1.0)
+        nn.init.constant_(module.bias, 0.02)
         #module.weight.detach().normal_(1.0, 0.02)
         #module.bias.detach().fill_(0.0)
 

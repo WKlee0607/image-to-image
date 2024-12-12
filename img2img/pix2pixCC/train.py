@@ -58,6 +58,7 @@ if __name__ == "__main__":
     version = get_next_version(log_root)
     log_dir = log_root / f"version_{version}"
     log_dir.mkdir(parents=True, exist_ok=True)
+    print("log dir:", log_dir)
 
     output_image_train_dir = log_dir / "images" / "train"
     output_image_val_dir = log_dir / "images" / "val"

@@ -30,7 +30,7 @@ data:
 
 model:
   generator:
-    name: default_generator # R2AttU_Net # default_generator # AttU_Net
+    name: R2AttU_Net # default_generator # AttU_Net
     args:
       input_ch: 3
       target_ch: 1
