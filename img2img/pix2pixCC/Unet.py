@@ -357,11 +357,11 @@ class AttU_Net(nn.Module):
 class R2AttU_Net(nn.Module):
     def __init__(self,img_ch=3,output_ch=1,t=2):
         super(R2AttU_Net,self).__init__()
-        self.c1 = 32 # 64
-        self.c2 = 64 # 128
-        self.c3 = 128 # 256
-        self.c4 = 256 # 512
-        self.c5 = 512 # 1024
+        self.c1 = 64
+        self.c2 = 128
+        self.c3 = 256
+        self.c4 = 512
+        self.c5 = 1024
         
         self.Maxpool = nn.MaxPool2d(kernel_size=2,stride=2)
         self.Upsample = nn.Upsample(scale_factor=2)

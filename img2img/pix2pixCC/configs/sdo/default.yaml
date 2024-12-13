@@ -57,11 +57,11 @@ params:
   optimizer:
     name: Adam
     args:
-      lr: 0.0001 # 0.00001 
+      lr: 0.00005 # 0.00001 
       betas: [0.5, 0.999]
       weight_decay: 0.0001
-      weigt_G: 1
-      weigt_D: 0.5 
+      weigt_G: 2
+      weigt_D: 1
 
   grad_clip:
     clip: True
